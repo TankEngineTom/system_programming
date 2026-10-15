@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
-#define CAR_MAX_LEN 31
-#define CAR_MIN_LEN 1
+#include "shared.h"
 
 bool floor_validity_check(const char *flr) {
     // check for null
