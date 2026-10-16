@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-
+#include <ctype.h>
 #include "packet_helper.h"
 #include "shared.h"
 
@@ -28,7 +28,7 @@ int make_connection() {
     // define server address
     server.sin_family = AF_INET;
     server.sin_port = htons(CONTROLLER_PORT);
-    server.sin_addr.s_addr = inet_addr("IP_ADDRESS"); // replace with actual IP address
+    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // replace with actual IP address
 
     int connection_status = 0;
     connection_status = connect(server_socket, (struct sockaddr *)&server, sizeof server);
@@ -38,7 +38,7 @@ int make_connection() {
         perror("Connection failed");
         return -1;
     }
-    return EXIT_SUCCESS;
+    return server_socket;
 }
 
 /*
@@ -89,10 +89,15 @@ int main(int argc, char *argv[]) {
     
     char message_const[60];
     snprintf(message_const, sizeof(message_const), "CALL %s %s %s", argv[1], argv[2], argv[3]);
-    send_package(socket_fd, message_const);
+
+    if (send_package(socket_fd, message_const) < 0) {
+        fprintf(stderr, "Failed to send request to server.\n");
+        close(socket_fd);
+        return EXIT_FAILURE;
+    }
 
     char response[60];
-    if (recieve_package(socket_fd, response, sizeof(response)) < 0) {
+    if (receive_package(socket_fd, response, sizeof(response)) < 0) {
         fprintf(stderr, "Failed to receive response from server.\n");
         close(socket_fd);
         return EXIT_FAILURE;
@@ -100,10 +105,10 @@ int main(int argc, char *argv[]) {
 
 
     if (strcmp(response, "ACCEPTED") == 0) {
-        printf("Car %s is arriving.", argv[1]);
+        printf("Car %s is arriving.\n", argv[1]);
     }
     else if (strcmp(response, "UNAVAILABLE") == 0) {
-        printf("Sorry, the car is unavailable for this request.");
+        printf("Sorry, that car is unavailable for this request.\n");
     }
 
     close(socket_fd);

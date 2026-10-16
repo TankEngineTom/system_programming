@@ -1,6 +1,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "shared.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
 
 bool floor_validity_check(const char *flr) {
     // check for null

@@ -17,7 +17,7 @@
 
 int send_packet(int socket, const void *buf, size_t len, int flags) {
     size_t bytes_sent_total = 0;
-    size_t bytes_sent_now = 0;
+    ssize_t bytes_sent_now = 0;
 
     const char *buf_ptr = buf;
 
