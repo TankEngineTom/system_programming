@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Invalid number of arguments\n");
         return EXIT_FAILURE;
     }
-
         if (argv[0] == NULL || argv[1] == NULL || argv[2] == NULL || argv[3] == NULL) {
         fprintf(stderr, "Invalid arguments\n");
         return EXIT_FAILURE;
