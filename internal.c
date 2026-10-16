@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>  // O_CREAT, O_RDWR 
-#include <sys/wait.h>  // wait()
 #include <unistd.h>  // ftruncate, close()
-
+#include <sys/mman.h>
+#include <sys/stat.h> 
+#include "car_shared.h"
+#include <string.h>>
 /* 
 arguments: 
 ./internal {operation} {car name}
@@ -17,18 +19,53 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Invalid number of arguments\n");
         return EXIT_FAILURE;
     }
+
+    if (strcmp(argv[1], "floor") == 0 && argc != 4) {
+        fprintf(stderr, "Invalid arguments.\n");
+        return EXIT_FAILURE;
+
+    }
+    if (strcmp(argv[1], "floor") == 0 && argc != 3) {
+        fprintf(stderr, "Invalid arguments.\n");
+        return EXIT_FAILURE;
+
+    }
+
+
     const char *arg_type = (argc == 3) ? "car" : "floor";
 
 
     /*
     {operation}: open, close, stop, service_on, service_off, up, down
-    {}
     */
     if (strcmp(arg_type, "car") == 0) {
-        
+        if (strcmp(argv[1], "open") == 0 || 
+        strcmp(argv[1],  "close") == 0 ||
+        strcmp(argv[1],  "stop") == 0 ||
+        strcmp(argv[1],  "service_on") == 0 ||
+        strcmp(argv[1],  "service_off") == 0 ||
+        strcmp(argv[1],  "up") == 0 ||
+        strcmp(argv[1],  "down") == 0 ) {
+            // passed, can continue
+        }
+        else
+            return EXIT_FAILURE;
+
+        // check car name
+        if(!car_name_validity_check(argv[2])) {
+            return EXIT_FAILURE;
+        }
     }
-    else if (strcmp(arg_type, "floor") == 0) {
-        
+    
+    
+    if (strcmp(arg_type, "floor") == 0 && strcmp(argv[1], "floor") == 0) {
+        if (!car_name_validity_check(argv[2])) {
+
+            return EXIT_FAILURE;
+        }
+        if (!floor_validity_check(argv[3])) {
+            return EXIT_FAILURE;
+        }
     }
 
     /* 
@@ -47,13 +84,31 @@ int main(int argc, char *argv[]) {
     */
 
     // create a shared memory object
-    int shm_fd = shm_open();
+    char shm_name[64];
+    snprintf(shm_name, sizeof(shm_name), "/cab403_car_%s", argv[2]);
+
+
+    int shm_fd = shm_open(shm_name, O_RDWR, 0);
     if (shm_fd == -1) {
         perror("shm_open");
         return 1;
     }
 
-    int ftruncate_result = ftruncate(shm_fd, sizeof(int));
+
+    car_shared_mem *car_shm = mmap(NULL, sizeof(car_shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    close(shm_fd);
+    if(shm_fd == MAP_FAILED) {
+        perror("mmap");
+        return EXIT_FAILURE;
+    }
+
+    pthread_mutex_lock (&car_shm->mutex);
+    car_shm->open_button = 1;
+    pthread_cond_broadcast(&car_shm->cond);
+    pthread_mutex_unlock(&car_shm->mutex);
+
+    munmap(car_shm, sizeof(car_shared_mem));
+    return EXIT_SUCCESS;
 
 
 
